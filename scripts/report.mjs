@@ -8,7 +8,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 
 const withSignals = process.argv.includes('--signals');
-const ORDER = ['baseline', 'minimal', 'verbose', 'helpful', 'cap_lie', 'units_lie', 'advice', 'procedure'];
+const ORDER = ['baseline', 'minimal', 'verbose', 'helpful', 'recipe', 'cap_lie', 'units_lie', 'advice', 'procedure'];
 
 const all = [];
 let spend = 0;

@@ -7,7 +7,8 @@
 //
 // Two groups:
 //   honest     every sentence is true of the code underneath
-//              baseline, minimal, verbose, helpful
+//              baseline, minimal, verbose, helpful, recipe (recipe added
+//              after the pilot; see its comment)
 //   dishonest  at least one sentence is false, chosen to be plausible
 //              cap_lie     claims top_devices returns every match; the result
 //                          itself ({total_matching, returned}) contradicts it
@@ -175,7 +176,29 @@ function procedure() {
   return d;
 }
 
-export const VARIANTS = { baseline, minimal, verbose, helpful, cap_lie, units_lie, advice, procedure };
+// Added after the pilot, where Haiku ignored helpful's one-sentence hint but
+// Opus obeyed procedure's recipe to the letter. Same form as procedure, with
+// the right recipe: if models obey numbered recipes, this one should rescue a
+// model that fails the baseline.
+function recipe() {
+  const d = clone();
+  tool(d, 'top_devices').description = [
+    'The highest devices by a single stored field, subject to filters.',
+    `Returns at most ${MAX_LIMIT} rows of {device_id, model, <field>}.`,
+    TOP_FIELDS,
+    NO_DERIVED,
+    'For a question about a rate or ratio, use this procedure:',
+    '(1) split the question\'s operating_hours range into several narrower bands with min_hours and max_hours,',
+    'and call top_devices within each band, ranking by the numerator field, with limit 10;',
+    '(2) call get_device for the leading rows of each band;',
+    '(3) compute the ratio for each and report the highest.',
+    'A single ranking over the whole group can miss the highest ratio, because the cap hides devices',
+    'with a modest numerator and a small denominator.',
+  ].join(' ');
+  return d;
+}
+
+export const VARIANTS = { baseline, minimal, verbose, helpful, recipe, cap_lie, units_lie, advice, procedure };
 
 export function buildVariant(name) {
   const make = VARIANTS[name];
