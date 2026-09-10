@@ -44,7 +44,7 @@ for (const arm of arms) {
   // previous run of its condition read its whole prefix from cache, so mean
   // cost partly measures how deterministic a condition is. Tokens do not.
   const head = ['variant', 'n', 'correct', 'compare ok', 'IL7-032', 'turns', 'tool calls', 'tool errors', 'peak ctx', 'tokens in', 'tokens out', 'cost'];
-  const sig = ['banded', 'divided', 'careful wrong', 'lazy wrong', 'cap talk', 'says raw', 'desc talk', 'omit limit'];
+  const sig = ['banded', 'divided', 'careful wrong', 'lazy wrong', 'cap talk', 'told user', 'says raw', 'desc talk', 'omit limit'];
   const cols = withSignals ? [...head, ...sig] : head;
   console.log(`| ${cols.join(' | ')} |`);
   console.log(`|${cols.map((c, i) => (i === 0 ? '---' : '---:')).join('|')}|`);
@@ -74,6 +74,7 @@ for (const arm of arms) {
         frac(rs, (r) => !r.grade.correct && r.signals.fetchedFromPool >= 5),
         frac(rs, (r) => !r.grade.correct && r.signals.fetchedFromPool <= 2),
         frac(rs, (r) => r.signals.capTalk),
+        frac(rs, (r) => r.signals.toldUser),
         frac(rs, (r) => r.signals.unitsDoubt),
         frac(rs, (r) => r.signals.descTalk),
         frac(rs, (r) => r.signals.omittedLimit),
