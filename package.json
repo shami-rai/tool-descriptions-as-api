@@ -6,6 +6,10 @@
   "description": "The claim that a tool's prose description, not its type signature, is the real interface the model programs against, and that writing it is design work.",
   "scripts": {
     "smoke": "node --env-file-if-exists=.env scripts/smoke.mjs",
+    "check": "node scripts/check-variants.mjs",
+    "exp": "node --env-file-if-exists=.env scripts/run.mjs",
+    "report": "node scripts/report.mjs",
+    "show": "node scripts/show.mjs",
     "fleet": "node scripts/generate-fleet.mjs"
   },
   "dependencies": {

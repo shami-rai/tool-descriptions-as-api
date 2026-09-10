@@ -16,7 +16,14 @@ export function grade(run) {
   const compareId = final?.[2] ?? null;
 
   const calls = run.trace.flatMap((t) => t.calls ?? []);
-  const narrowed = calls.some((c) => c.input?.min_hours !== undefined || c.input?.max_hours !== undefined);
+  // Narrowed means a ranking over a band tighter than the question's own pool
+  // (under 500 hours). The first version counted any hours filter, so a single
+  // max_hours: 500 call, which every run makes, scored as narrowing.
+  const narrowed = calls.some(
+    (c) =>
+      c.name === 'top_devices' &&
+      ((c.input?.min_hours ?? 0) > 0 || (c.input?.max_hours !== undefined && c.input.max_hours < 500)),
+  );
   const modelLookup = calls.some((c) => c.name === 'top_devices' && c.input?.model === ANSWER.model);
   // Did the right device ever appear in anything the agent was shown?
   const sawAnswer = calls.some((c) => String(c.result).includes(ANSWER.device_id));

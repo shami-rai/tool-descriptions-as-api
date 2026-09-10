@@ -125,7 +125,17 @@ export async function runAgent({
       .map((b) => b.text)
       .join('\n')
       .trim();
-    const entry = { turn, context, output: u.output_tokens, stop_reason: response.stop_reason, text, calls: [] };
+    // Added for tool-descriptions-as-api: at low effort the model writes almost
+    // no visible text between calls, so "did it notice the description was
+    // wrong" can only be read from its thinking. Opus 5 omits thinking text by
+    // default; a run that passes thinking.display "summarized" in `extra` gets a
+    // summary here. Empty string otherwise. Display changes visibility only.
+    const thinking = response.content
+      .filter((b) => b.type === 'thinking')
+      .map((b) => b.thinking ?? '')
+      .join('\n')
+      .trim();
+    const entry = { turn, context, output: u.output_tokens, stop_reason: response.stop_reason, text, thinking, calls: [] };
     trace.push(entry);
 
     if (response.stop_reason !== 'tool_use') {
