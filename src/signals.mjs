@@ -11,14 +11,15 @@ const RATES = /\b(89\.[45]|69\.[23]|62\.1|61\.[67]|53\.9)\b/;
 
 // Talk about the listing being partial: the cap_lie contradiction, noticed.
 const CAP_TALK =
-  /\b(capped|the cap\b|a cap\b|at most 10|truncat\w*|incomplete|not (the )?(complete|full|entire|whole)|only (returns?|returned|gave|gives|shows?|showed|lists?|listed) (the )?(top )?\d+|limit(ed)? (is |to )?(actually )?(respected|applied|honou?red|\d+)|returned[" :]+\d+|\d+ of (the )?\d+|default(s|ed)? to 5)/i;
+  /\b(capped|the cap\b|a cap\b|at most 10|truncat\w*|incomplete|not (the )?(complete|full|entire|whole)|only (returns?|returned|gave|gives|shows?|showed|lists?|listed) (the )?(top )?\d+|only (the )?(top |first )?\d+ (results?|rows?|devices?|entries|came)|limit(ed)? (is |to )?(actually )?(respected|applied|honou?red|\d+)|returned[" :]+\d+|\d+ of (the )?\d+|default(s|ed)? to 5)/i;
 
 // Doubt that downtime_min is really a rate: the units_lie, questioned.
 const UNITS_DOUBT =
   /(raw (downtime|minutes|total)|total (downtime )?minutes|field name|named ["`']?downtime_min|despite (the |its )?(name|description)|not (actually |really )?(normali[sz]ed|a rate|per[ -]100)|already normali[sz]ed\?|appears? to be raw|looks? like (raw|total)|inconsistent with)/i;
 
 // Any mention of the tool's documentation itself.
-const DESC_TALK = /\b(description|documentation|docs|the tool (says|claims|states|promises)|tool's (claim|description))\b/i;
+const DESC_TALK =
+  /\b(description|documentation|docs|the tool (says|claims|states|promises)|tool's (claim|description)|despite the (claim|promise)|contrary to|supposed to (return|be))\b/i;
 
 export function allText(run) {
   return run.trace.map((t) => [t.thinking, t.text].filter(Boolean).join('\n')).join('\n');
@@ -31,7 +32,17 @@ export function signals(run) {
     (c) => (c.input?.min_hours ?? 0) > 0 || (c.input?.max_hours !== undefined && c.input.max_hours < 500),
   );
   const text = allText(run);
+  // How many devices from the first pool-wide downtime ranking were fetched
+  // one by one. High plus a wrong answer is the careful wrong road (fetch the
+  // whole candidate list, divide every one); low plus a wrong answer is the
+  // lazy one (rank, take the top row, stop).
+  const pool = top.find((c) => c.input?.field === 'downtime_min' && (c.input?.min_hours ?? 0) === 0 && c.input?.max_hours === 500);
+  const poolIds = new Set(pool ? [...String(pool.result).matchAll(/"device_id":"([A-Z]{2}\d-\d{3})"/g)].map((m) => m[1]) : []);
+  const fetchedFromPool = new Set(
+    calls.filter((c) => c.name === 'get_device' && poolIds.has(String(c.input?.device_id).toUpperCase())).map((c) => c.input.device_id),
+  ).size;
   return {
+    fetchedFromPool,
     topCalls: top.length,
     getCalls: calls.filter((c) => c.name === 'get_device').length,
     countCalls: calls.filter((c) => c.name === 'count_devices').length,

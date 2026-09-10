@@ -6,6 +6,11 @@
 // counts in the spend line.
 
 import { readdirSync, readFileSync } from 'node:fs';
+import { grade } from '../src/rig/grade.mjs';
+import { signals } from '../src/signals.mjs';
+
+// Grade and signals are recomputed from each stored trace, so a corrected
+// definition applies to every run already recorded, not only to later ones.
 
 const withSignals = process.argv.includes('--signals');
 const ORDER = ['baseline', 'minimal', 'verbose', 'helpful', 'recipe', 'cap_lie', 'units_lie', 'advice', 'procedure'];
@@ -18,8 +23,13 @@ for (const f of readdirSync('runs').filter((f) => f.endsWith('.jsonl')).sort()) 
     if (!line.trim()) continue;
     const r = JSON.parse(line);
     spend += r.costUSD ?? 0;
-    if (f.startsWith('debug')) debugRuns++;
-    else all.push(r);
+    if (f.startsWith('debug')) {
+      debugRuns++;
+      continue;
+    }
+    r.grade = grade(r);
+    r.signals = signals(r);
+    all.push(r);
   }
 }
 
@@ -31,7 +41,7 @@ for (const arm of arms) {
   const runs = all.filter((r) => r.arm === arm);
   console.log(`\n### ${arm}\n`);
   const head = ['variant', 'n', 'correct', 'compare ok', 'IL7-032', 'turns', 'tool calls', 'tool errors', 'peak ctx', 'cost'];
-  const sig = ['banded', 'divided', 'cap talk', 'units doubt', 'omit limit'];
+  const sig = ['banded', 'divided', 'careful wrong', 'lazy wrong', 'cap talk', 'says raw', 'desc talk', 'omit limit'];
   const cols = withSignals ? [...head, ...sig] : head;
   console.log(`| ${cols.join(' | ')} |`);
   console.log(`|${cols.map((c, i) => (i === 0 ? '---' : '---:')).join('|')}|`);
@@ -54,8 +64,13 @@ for (const arm of arms) {
       row.push(
         frac(rs, (r) => r.signals.bandedCalls > 0),
         frac(rs, (r) => r.signals.divided),
+        // Wrong by the careful road: fetched at least five of the pool-wide
+        // top ten one by one. By the lazy road: fetched at most two.
+        frac(rs, (r) => !r.grade.correct && r.signals.fetchedFromPool >= 5),
+        frac(rs, (r) => !r.grade.correct && r.signals.fetchedFromPool <= 2),
         frac(rs, (r) => r.signals.capTalk),
         frac(rs, (r) => r.signals.unitsDoubt),
+        frac(rs, (r) => r.signals.descTalk),
         frac(rs, (r) => r.signals.omittedLimit),
       );
     }
