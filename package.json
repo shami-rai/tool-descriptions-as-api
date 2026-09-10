@@ -1,0 +1,14 @@
+{
+  "name": "tool-descriptions-as-api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The claim that a tool's prose description, not its type signature, is the real interface the model programs against, and that writing it is design work.",
+  "scripts": {
+    "smoke": "node --env-file-if-exists=.env scripts/smoke.mjs",
+    "fleet": "node scripts/generate-fleet.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.125.0"
+  }
+}
