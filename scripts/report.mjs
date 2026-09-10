@@ -40,7 +40,10 @@ const arms = [...new Set(all.map((r) => r.arm))];
 for (const arm of arms) {
   const runs = all.filter((r) => r.arm === arm);
   console.log(`\n### ${arm}\n`);
-  const head = ['variant', 'n', 'correct', 'compare ok', 'IL7-032', 'turns', 'tool calls', 'tool errors', 'peak ctx', 'cost'];
+  // Tokens as well as dollars: automatic caching lets a run that repeats the
+  // previous run of its condition read its whole prefix from cache, so mean
+  // cost partly measures how deterministic a condition is. Tokens do not.
+  const head = ['variant', 'n', 'correct', 'compare ok', 'IL7-032', 'turns', 'tool calls', 'tool errors', 'peak ctx', 'tokens in', 'tokens out', 'cost'];
   const sig = ['banded', 'divided', 'careful wrong', 'lazy wrong', 'cap talk', 'says raw', 'desc talk', 'omit limit'];
   const cols = withSignals ? [...head, ...sig] : head;
   console.log(`| ${cols.join(' | ')} |`);
@@ -58,6 +61,8 @@ for (const arm of arms) {
       mean(rs.map((r) => r.toolCalls)).toFixed(1),
       mean(rs.map((r) => r.toolErrors)).toFixed(1),
       `${(mean(rs.map((r) => r.peakContext)) / 1000).toFixed(1)}k`,
+      `${(mean(rs.map((r) => r.usage.input + r.usage.cacheWrite + r.usage.cacheRead)) / 1000).toFixed(1)}k`,
+      `${(mean(rs.map((r) => r.usage.output)) / 1000).toFixed(2)}k`,
       `$${mean(rs.map((r) => r.costUSD)).toFixed(3)}`,
     ];
     if (withSignals) {
