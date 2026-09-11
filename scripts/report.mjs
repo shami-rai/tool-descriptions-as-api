@@ -36,9 +36,12 @@ for (const f of readdirSync('runs').filter((f) => f.endsWith('.jsonl')).sort()) 
 const mean = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN);
 const frac = (xs, f) => `${xs.filter(f).length}/${xs.length}`;
 
-const arms = [...new Set(all.map((r) => r.arm))];
+// An arm or variant whose every run ended in api_error has no graded run
+// and gets no row; the count of excluded runs is printed at the end.
+const excluded = all.filter((r) => r.stop === 'api_error').length;
+const arms = [...new Set(all.filter((r) => r.stop !== 'api_error').map((r) => r.arm))];
 for (const arm of arms) {
-  const runs = all.filter((r) => r.arm === arm);
+  const runs = all.filter((r) => r.arm === arm && r.stop !== 'api_error');
   console.log(`\n### ${arm}\n`);
   // Tokens as well as dollars: automatic caching lets a run that repeats the
   // previous run of its condition read its whole prefix from cache, so mean
@@ -84,4 +87,6 @@ for (const arm of arms) {
   }
 }
 
-console.log(`\nruns: ${all.length} graded + ${debugRuns} debug | total API spend $${spend.toFixed(3)}`);
+console.log(
+  `\nruns: ${all.length - excluded} graded + ${excluded} api_error (excluded) + ${debugRuns} debug | total API spend $${spend.toFixed(3)}`,
+);
